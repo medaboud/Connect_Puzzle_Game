@@ -84,6 +84,18 @@ class AuthService extends ChangeNotifier {
     final wasGuest = _state is AuthGuest;
     _setState(const AuthLoading());
 
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.macOS)) {
+      _setState(
+        const AuthError(
+          'Facebook login is supported on mobile devices. Please continue as Guest on desktop.',
+        ),
+      );
+      return;
+    }
+
     try {
       final result = await _fb.login(
         permissions: const ['public_profile', 'user_friends'],
