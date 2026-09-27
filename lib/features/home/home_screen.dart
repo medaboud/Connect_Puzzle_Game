@@ -7,12 +7,23 @@ import '../how_to_play/how_to_play_screen.dart';
 import '../play/play_screen.dart';
 import '../practice/practice_screen.dart';
 import '../settings/settings_screen.dart';
+import '../leaderboard/leaderboard_screen.dart';
 import '../stats/stats_screen.dart';
+import '../../data/cloud_repository.dart';
+import '../auth/auth_service.dart';
+import '../auth/auth_state.dart';
 
 class HomeScreen extends StatefulWidget {
   final GameRepository repository;
+  final AuthService? authService;
+  final CloudRepository? cloudRepository;
 
-  const HomeScreen({super.key, required this.repository});
+  const HomeScreen({
+    super.key,
+    required this.repository,
+    this.authService,
+    this.cloudRepository,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -43,8 +54,12 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.of(context)
         .push(
           MaterialPageRoute(
-            builder: (_) =>
-                PlayScreen(puzzle: dailyPuzzle, repository: widget.repository),
+            builder: (_) => PlayScreen(
+              puzzle: dailyPuzzle,
+              repository: widget.repository,
+              authService: widget.authService,
+              cloudRepository: widget.cloudRepository,
+            ),
           ),
         )
         .then((_) => _loadData());
@@ -54,7 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.of(context)
         .push(
           MaterialPageRoute(
-            builder: (_) => PracticeScreen(repository: widget.repository),
+            builder: (_) => PracticeScreen(
+              repository: widget.repository,
+              authService: widget.authService,
+              cloudRepository: widget.cloudRepository,
+            ),
           ),
         )
         .then((_) => _loadData());
@@ -76,10 +95,24 @@ class _HomeScreenState extends State<HomeScreen> {
     ).push(MaterialPageRoute(builder: (_) => const HowToPlayScreen()));
   }
 
+  void _openLeaderboard() {
+    final cloud = widget.cloudRepository ?? CloudRepository();
+    final auth = widget.authService ?? AuthService(cloudRepository: cloud);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            LeaderboardScreen(authService: auth, cloudRepository: cloud),
+      ),
+    );
+  }
+
   void _openSettings() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SettingsScreen(repository: widget.repository),
+        builder: (_) => SettingsScreen(
+          repository: widget.repository,
+          authService: widget.authService,
+        ),
       ),
     );
   }
@@ -132,6 +165,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         children: [
                           IconButton(
+                            icon: const Icon(Icons.leaderboard_rounded),
+                            tooltip: 'Leaderboard',
+                            onPressed: _openLeaderboard,
+                          ),
+                          IconButton(
                             icon: const Icon(Icons.help_outline_rounded),
                             tooltip: 'How to play',
                             onPressed: _openHowToPlay,
@@ -145,7 +183,84 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  if (widget.authService != null) ...[
+                    const SizedBox(height: 8),
+                    ListenableBuilder(
+                      listenable: widget.authService!,
+                      builder: (context, _) {
+                        final auth = widget.authService!;
+                        final state = auth.state;
+                        if (state is AuthGuest) {
+                          return InkWell(
+                            onTap: _openSettings,
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.cellBackground,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppColors.cellBorder.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.phone_android_rounded,
+                                    size: 16,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Playing as Guest (progress saved on phone)',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    'Connect',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.cobaltPath,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else if (state is AuthAuthenticated) {
+                          return Row(
+                            children: [
+                              const Icon(
+                                Icons.cloud_done_rounded,
+                                size: 14,
+                                color: AppColors.completedGreen,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Signed in as ${state.user.name}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 16),
 
                   // Play Today - Hero Card
                   Card(
@@ -363,6 +478,63 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Text(
                                     '${_stats.totalSolved} total solved • ${_stats.currentStreak} day streak',
                                     style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                              color: AppColors.textLight,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Leaderboard Card
+                  Card(
+                    child: InkWell(
+                      onTap: _openLeaderboard,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: AppColors.cellActive,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.emoji_events_rounded,
+                                color: AppColors.cobaltPath,
+                                size: 26,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Leaderboard',
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Global ranking & friends',
+                                    style: TextStyle(
                                       fontSize: 13,
                                       color: AppColors.textMuted,
                                     ),

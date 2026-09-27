@@ -11,6 +11,8 @@ class WinDialog extends StatelessWidget {
   final VoidCallback onReplay;
   final VoidCallback onNextOrHome;
   final String nextButtonLabel;
+  final bool isGuest;
+  final bool isCloudSynced;
 
   const WinDialog({
     super.key,
@@ -20,6 +22,8 @@ class WinDialog extends StatelessWidget {
     required this.onReplay,
     required this.onNextOrHome,
     this.nextButtonLabel = 'Next Puzzle',
+    this.isGuest = false,
+    this.isCloudSynced = false,
   });
 
   String _formatTimer(int totalSeconds) {
@@ -123,7 +127,42 @@ ${puzzle.title} (${puzzle.difficulty.displayName})
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            if (isGuest) ...[
+              const SizedBox(height: 12),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.phone_android_rounded,
+                    size: 14,
+                    color: AppColors.textMuted,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'Saved locally on this phone',
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ] else if (isCloudSynced) ...[
+              const SizedBox(height: 12),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.cloud_done_rounded,
+                    size: 14,
+                    color: AppColors.completedGreen,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'Synced to leaderboard',
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 20),
 
             // Share Result Button
             OutlinedButton.icon(

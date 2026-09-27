@@ -1,0 +1,39 @@
+name = "loopline-api"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+compatibility_flags = ["nodejs_compat"]
+
+# ---------------------------------------------------------------------------
+# D1 Database binding
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "loopline-db"
+database_id = "90cb417a-563c-4ec6-8fc2-875dd047be23"
+
+# ---------------------------------------------------------------------------
+# KV Namespace binding (leaderboard cache)
+# ---------------------------------------------------------------------------
+[[kv_namespaces]]
+binding = "LEADERBOARD_CACHE"
+id = "2053e2e78c1d4fc3a5c6f0f53e9c6538"
+
+# ---------------------------------------------------------------------------
+# Secrets (set via: wrangler secret put JWT_SECRET)
+# ---------------------------------------------------------------------------
+# JWT_SECRET          – random 32+ char string used to sign session tokens
+# FB_APP_SECRET       – from your Facebook App dashboard (used server-side only)
+#
+# Do NOT put real values here. Use `wrangler secret put <KEY>` instead.
+
+# ---------------------------------------------------------------------------
+# Local dev environment overrides
+# ---------------------------------------------------------------------------
+[env.dev]
+name = "loopline-api-dev"
+
+[vars]
+ENVIRONMENT = "production"
+
+[env.dev.vars]
+ENVIRONMENT = "development"

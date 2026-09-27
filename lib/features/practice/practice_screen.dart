@@ -5,11 +5,20 @@ import '../../game/puzzle.dart';
 import '../../game/puzzle_library.dart';
 import '../../theme/app_colors.dart';
 import '../play/play_screen.dart';
+import '../../data/cloud_repository.dart';
+import '../auth/auth_service.dart';
 
 class PracticeScreen extends StatefulWidget {
   final GameRepository repository;
+  final AuthService? authService;
+  final CloudRepository? cloudRepository;
 
-  const PracticeScreen({super.key, required this.repository});
+  const PracticeScreen({
+    super.key,
+    required this.repository,
+    this.authService,
+    this.cloudRepository,
+  });
 
   @override
   State<PracticeScreen> createState() => _PracticeScreenState();
@@ -43,6 +52,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
             builder: (_) => PlayScreen(
               puzzle: puzzle,
               repository: widget.repository,
+              authService: widget.authService,
+              cloudRepository: widget.cloudRepository,
               onCompletedNext: () {
                 // Find next puzzle in sequence if available
                 final currentList = PuzzleLibrary.getByDifficulty(
@@ -58,6 +69,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
                       builder: (_) => PlayScreen(
                         puzzle: currentList[currentIndex + 1],
                         repository: widget.repository,
+                        authService: widget.authService,
+                        cloudRepository: widget.cloudRepository,
                       ),
                     ),
                   );

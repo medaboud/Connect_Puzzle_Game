@@ -1,0 +1,17 @@
+{
+  "name": "loopline-api",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker backend for Loopline puzzle game",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute loopline-db --file=./schema.sql",
+    "db:migrate:remote": "wrangler d1 execute loopline-db --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "typescript": "^5.5.2",
+    "wrangler": "^3.78.10"
+  }
+}

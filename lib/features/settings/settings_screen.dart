@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../data/game_repository.dart';
 import '../../data/user_preferences.dart';
+import '../auth/auth_service.dart';
+import '../auth/auth_state.dart';
 
 class SettingsScreen extends StatefulWidget {
   final GameRepository repository;
   final ValueChanged<UserPreferences>? onPreferencesChanged;
+  final AuthService? authService;
 
   const SettingsScreen({
     super.key,
     required this.repository,
     this.onPreferencesChanged,
+    this.authService,
   });
 
   @override
@@ -57,6 +61,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   vertical: 12.0,
                 ),
                 children: [
+                  if (widget.authService != null) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                        vertical: 8.0,
+                      ),
+                      child: Text(
+                        'ACCOUNT',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                    Card(
+                      child: ListenableBuilder(
+                        listenable: widget.authService!,
+                        builder: (context, _) {
+                          final state = widget.authService!.state;
+                          if (state is AuthAuthenticated) {
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage: state.user.avatarUrl != null
+                                    ? NetworkImage(state.user.avatarUrl!)
+                                    : null,
+                                child: state.user.avatarUrl == null
+                                    ? Text(
+                                        state.user.name.isNotEmpty
+                                            ? state.user.name[0].toUpperCase()
+                                            : '?',
+                                      )
+                                    : null,
+                              ),
+                              title: Text(state.user.name),
+                              subtitle: const Text(
+                                'Signed in with Facebook (Cloud Sync)',
+                              ),
+                              trailing: TextButton(
+                                onPressed: () async {
+                                  Navigator.of(
+                                    context,
+                                  ).popUntil((route) => route.isFirst);
+                                  await widget.authService!.signOut();
+                                },
+                                child: const Text('Sign Out'),
+                              ),
+                            );
+                          }
+                          return ListTile(
+                            leading: const Icon(Icons.phone_android_rounded),
+                            title: const Text('Playing as Guest'),
+                            subtitle: const Text(
+                              'Progress saved locally on this phone only',
+                            ),
+                            trailing: state is AuthLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : FilledButton.tonal(
+                                    onPressed: () => widget.authService!
+                                        .signInWithFacebook(),
+                                    child: const Text('Connect'),
+                                  ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   const Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 8.0,

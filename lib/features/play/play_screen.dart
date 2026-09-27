@@ -13,17 +13,24 @@ import '../../widgets/board_widget.dart';
 import '../../widgets/game_controls.dart';
 import '../../widgets/game_header.dart';
 import '../../widgets/win_dialog.dart';
+import '../../data/cloud_repository.dart';
+import '../auth/auth_service.dart';
+import '../auth/auth_state.dart';
 
 class PlayScreen extends StatefulWidget {
   final Puzzle puzzle;
   final GameRepository repository;
   final VoidCallback? onCompletedNext;
+  final AuthService? authService;
+  final CloudRepository? cloudRepository;
 
   const PlayScreen({
     super.key,
     required this.puzzle,
     required this.repository,
     this.onCompletedNext,
+    this.authService,
+    this.cloudRepository,
   });
 
   @override
@@ -153,6 +160,27 @@ class _PlayScreenState extends State<PlayScreen> {
       movesCount: _state.movesCount,
     );
 
+    // If signed in, asynchronously submit to online leaderboard
+    final auth = widget.authService;
+    final cloud = widget.cloudRepository;
+    final isCloudSynced =
+        auth != null && cloud != null && auth.state is AuthAuthenticated;
+    final isGuest = auth?.state is AuthGuest;
+
+    if (isCloudSynced) {
+      final jwt = (auth.state as AuthAuthenticated).user.jwt;
+      cloud
+          .submitCompletion(
+            jwt: jwt,
+            puzzleId: widget.puzzle.id,
+            difficulty: widget.puzzle.difficulty.name,
+            timeSeconds: _state.elapsedSeconds,
+            moveCount: _state.movesCount,
+            hintsUsed: _state.hintsUsed,
+          )
+          .ignore();
+    }
+
     if (!mounted) return;
 
     showDialog(
@@ -162,6 +190,8 @@ class _PlayScreenState extends State<PlayScreen> {
         puzzle: widget.puzzle,
         state: _state,
         streak: updatedStats.currentStreak,
+        isGuest: isGuest,
+        isCloudSynced: isCloudSynced,
         onReplay: () {
           Navigator.of(ctx).pop();
           _restartPuzzle();
